@@ -27,7 +27,7 @@ export async function GET() {
     const transactions = (data || []).map((row) => ({
       id: row.id, title: row.title, amount: Number(row.amount), currency: row.currency,
       type: row.type, category: row.category, date: row.tx_date,
-      accountId: row.account_id, account: row.accounts?.name || "",
+      accountId: row.account_id, account: row.accounts?.[0]?.name || "",
       ...(row.note ? { note: row.note } : {}),
     }));
     return Response.json({ transactions }, { headers: { "Cache-Control": "no-store" } });
@@ -97,7 +97,7 @@ export async function PATCH(request: Request) {
     return Response.json({ transaction: {
       id: data.id, title: data.title, amount: Number(data.amount), currency: data.currency,
       type: data.type, category: data.category, date: data.tx_date, accountId: data.account_id,
-      account: data.accounts?.name || "", ...(data.note ? { note: data.note } : {}),
+      account: data.accounts?.[0]?.name || "", ...(data.note ? { note: data.note } : {}),
     } }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка обновления операции.", 400);
