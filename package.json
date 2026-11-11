@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "security:smoke": "node scripts/security-smoke.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:supabase": "node scripts/supabase-integration.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
