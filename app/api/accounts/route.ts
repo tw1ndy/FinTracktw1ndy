@@ -6,7 +6,7 @@ const currencies = new Set(["RUB","USD","EUR","GBP","CNY","TRY","AED","CHF","JPY
 export const runtime = "nodejs";
 
 async function getAuthenticatedUser() {
-  const access = cookies().get("ft_access")?.value;
+  const access = (await cookies()).get("ft_access")?.value;
   if (!access) return null;
   const auth = getSupabaseAdminlessClient();
   const { data, error } = await auth.auth.getUser(access);
