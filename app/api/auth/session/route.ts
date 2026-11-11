@@ -13,7 +13,7 @@ export async function GET() {
     const client = getSupabaseAdminlessClient();
     const { data, error } = await client.auth.getUser(access);
     if (!error && data.user) return Response.json({ user: { id: data.user.id, email: data.user.email } }, { headers: { "Cache-Control": "no-store" } });
-    if (!refresh) return Response.json({ user: null }, { headers: { "Cache-Control": "no-store" } });
+    if (!refresh) return noSession();
     const renewed = await client.auth.refreshSession({ refresh_token: refresh });
     if (renewed.error || !renewed.data.session || !renewed.data.user) return noSession();
     const response = Response.json({ user: { id: renewed.data.user.id, email: renewed.data.user.email } }, { headers: { "Cache-Control": "no-store" } });
