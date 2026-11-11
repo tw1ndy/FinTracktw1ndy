@@ -32,9 +32,9 @@ const today = new Date().toISOString().slice(0, 10);
 try {
   const fixtures = [
     ["accounts", { user_id: a.user.id, name: `RLS test ${suffix}`, balance: 12.34, currency: "EUR" }],
-    ["transactions", { user_id: a.user.id, client_id: `rls-${suffix}`, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today, account_name: "RLS test" }],
+    ["transactions", { user_id: a.user.id, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today, account_name: "RLS test" }],
     ["budgets", { user_id: a.user.id, category: `RLS-${suffix}`, amount_limit: 100, currency: "EUR" }],
-    ["goals", { user_id: a.user.id, client_id: `rls-${suffix}`, title: `RLS test ${suffix}`, target: 100, saved: 10, currency: "EUR" }]
+    ["goals", { user_id: a.user.id, title: `RLS test ${suffix}`, target: 100, saved: 10, currency: "EUR" }]
   ];
 
   for (const [table, row] of fixtures) {
