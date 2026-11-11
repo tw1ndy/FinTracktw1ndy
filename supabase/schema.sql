@@ -57,15 +57,15 @@ alter table public.budgets enable row level security;
 alter table public.goals enable row level security;
 
 drop policy if exists "profile own row" on public.profiles;
-create policy "profile own row" on public.profiles for all to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+create policy "profile own row" on public.profiles for all to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 drop policy if exists "accounts own rows" on public.accounts;
-create policy "accounts own rows" on public.accounts for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "accounts own rows" on public.accounts for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 drop policy if exists "transactions own rows" on public.transactions;
-create policy "transactions own rows" on public.transactions for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "transactions own rows" on public.transactions for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 drop policy if exists "budgets own rows" on public.budgets;
-create policy "budgets own rows" on public.budgets for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "budgets own rows" on public.budgets for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 drop policy if exists "goals own rows" on public.goals;
-create policy "goals own rows" on public.goals for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "goals own rows" on public.goals for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 create index if not exists transactions_user_date_idx on public.transactions(user_id, tx_date desc);
 create index if not exists transactions_account_user_idx on public.transactions(account_id, user_id);
