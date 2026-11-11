@@ -4,7 +4,7 @@
 
 ## Что уже реализовано
 - Адаптивный dashboard с тёмным интерфейсом.
-- Операции доходов и расходов с валютой, категорией, датой и счётом.
+- Операции доходов и расходов с валютой, категорией, датой и счётом, связанным по уникальному `account_id`.
 - Счета, бюджеты и цели накоплений.
 - График денежного потока и экспорт операций в CSV.
 - Мультивалютный пересчёт баланса.
@@ -24,7 +24,7 @@ npm run dev
 
 ## Облачная база и авторизация
 1. Создайте проект в Supabase.
-2. Откройте SQL Editor и выполните `supabase/schema.sql`, затем `supabase/security-hardening.sql`.
+2. Для **нового проекта** откройте SQL Editor и выполните `supabase/schema.sql`, затем `supabase/security-hardening.sql`. Для уже существующей базы с колонкой `transactions.account_name` сначала сделайте резервную копию и выполните миграцию `supabase/migrations/20261111_account_id.sql`, затем `supabase/security-hardening.sql`. Миграция связывает операции со счетами по уникальному совпадению имени; если найдутся непривязанные или неоднозначные операции, она остановится и откатит изменения. Такие записи нужно исправить до повторного запуска. Не запускайте миграцию поверх новой схемы.
 3. В Project Settings → API скопируйте Project URL и anon/public key.
 4. Заполните `.env.local`:
 
@@ -78,7 +78,7 @@ SUPABASE_TEST_USER_B_PASSWORD=...
 ## Financial data behavior
 - Transactions support cloud create, edit, and delete operations.
 - Accounts, budgets, and savings goals are managed through authenticated API routes; rows are scoped to the signed-in user by Supabase RLS.
-- An account's stored `balance` is its starting balance. The displayed balance is recalculated from that amount plus/minus linked income and expense transactions. Transactions in another currency are converted using the currently loaded reference rates; if a required rate is unavailable, the derived balance is shown as unavailable rather than guessed.
+- An account's stored `balance` is its starting balance. Transactions reference accounts by immutable `account_id` with a database-level composite foreign key that enforces matching ownership. The displayed balance is recalculated from that amount plus/minus linked income and expense transactions. Transactions in another currency are converted using the currently loaded reference rates; if a required rate is unavailable, the derived balance is shown as unavailable rather than guessed.
 - Accounts with linked transactions cannot be deleted until those transactions are removed or moved.
 - Starting account balances and savings-goal progress are entered manually by the user. There is no bank/Open Banking connection in this build; these values are not independently verified against a bank statement.
-- The dashboard and charts include only records loaded from the signed-in Supabase account. Empty periods are not filled with fabricated chart values. Missing or ambiguous account links and missing FX rates make derived totals unavailable instead of guessing.
+- The dashboard and charts include only records loaded from the signed-in Supabase account. Empty periods are not filled with fabricated chart values. Missing account links and missing FX rates make derived totals unavailable instead of guessing.
