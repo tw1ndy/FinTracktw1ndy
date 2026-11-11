@@ -1,5 +1,5 @@
 -- Migrate existing installations from account_name to a stable account_id.
--- Run once in Supabase SQL Editor after deploying code that supports account_id.
+-- Run once in Supabase SQL Editor before deploying code that requires account_id.
 begin;
 
 alter table public.accounts
