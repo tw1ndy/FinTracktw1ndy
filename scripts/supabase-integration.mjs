@@ -47,7 +47,7 @@ try {
     assert.equal(hidden.length, 0, `RLS leak: user B can read user A's ${table} row`);
 
     const { data: changed, error: updateError } = await b.client.from(table)
-      .update(table === "accounts" ? { balance: 999 } : table === "goals" ? { saved: 99 } : {})
+      .update(table === "accounts" ? { balance: 999 } : table === "transactions" ? { title: "changed" } : table === "budgets" ? { amount_limit: 999 } : { saved: 99 })
       .eq("id", data.id).select("id");
     if (updateError) throw new Error(`User B update check failed for ${table}: ${updateError.message}`);
     assert.equal(changed.length, 0, `RLS leak: user B can update user A's ${table} row`);
