@@ -1,10 +1,10 @@
-import { allowRequest } from "@/lib/rate-limit";
+import { allowRequest, getClientIp } from "@/lib/rate-limit";
 import { assertSameOrigin, getSupabaseAdminlessClient, jsonError, setSessionCookies } from "@/lib/server-supabase";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getClientIp(request);
     if (!allowRequest(`signup:${ip}`, 4, 60 * 60 * 1000)) return jsonError("Слишком много попыток регистрации. Попробуйте позже.", 429);
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -16,5 +16,8 @@ export async function POST(request: Request) {
     const response = Response.json({ message: data.session ? "Аккаунт создан." : "Проверьте почту и подтвердите регистрацию.", user: data.session && data.user ? { id: data.user.id, email: data.user.email } : null }, { headers: { "Cache-Control": "no-store" } });
     if (data.session) setSessionCookies(response, data.session.access_token, data.session.refresh_token, data.session.expires_in);
     return response;
-  } catch { return jsonError("Ошибка регистрации.", 403); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid request origin") return jsonError("Недопустимый источник запроса.", 403);
+    return jsonError("Ошибка регистрации.", 500);
+  }
 }

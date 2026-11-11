@@ -1,0 +1,45 @@
+name: CI
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+permissions:
+  contents: read
+concurrency:
+  group: fintrack-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm audit --audit-level=moderate
+      - run: npm run typecheck
+      - run: npm run security:smoke
+      - name: Supabase two-user RLS integration
+        if: ${{ vars.RUN_SUPABASE_INTEGRATION == 'true' }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_TEST_USER_A_EMAIL: ${{ secrets.SUPABASE_TEST_USER_A_EMAIL }}
+          SUPABASE_TEST_USER_A_PASSWORD: ${{ secrets.SUPABASE_TEST_USER_A_PASSWORD }}
+          SUPABASE_TEST_USER_B_EMAIL: ${{ secrets.SUPABASE_TEST_USER_B_EMAIL }}
+          SUPABASE_TEST_USER_B_PASSWORD: ${{ secrets.SUPABASE_TEST_USER_B_PASSWORD }}
+        run: |
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$NEXT_PUBLIC_SUPABASE_URL" > .env.local
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.local
+          printf 'SUPABASE_TEST_USER_A_EMAIL=%s\n' "$SUPABASE_TEST_USER_A_EMAIL" >> .env.local
+          printf 'SUPABASE_TEST_USER_A_PASSWORD=%s\n' "$SUPABASE_TEST_USER_A_PASSWORD" >> .env.local
+          printf 'SUPABASE_TEST_USER_B_EMAIL=%s\n' "$SUPABASE_TEST_USER_B_EMAIL" >> .env.local
+          printf 'SUPABASE_TEST_USER_B_PASSWORD=%s\n' "$SUPABASE_TEST_USER_B_PASSWORD" >> .env.local
+          npm run test:supabase
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: example-anon-key
