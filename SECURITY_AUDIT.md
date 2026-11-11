@@ -13,7 +13,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | Password reset | Частично | Reset request and token-hash confirmation route added. Supabase email template and token lifetime still need configuration and live testing. |
 | Login/resource rate limits | Частично | In-memory best-effort limits added. Not sufficient for serverless/multi-instance production; add shared Redis/Upstash limiter and configure Supabase Auth limits. |
 | Server-side transaction access | ОК (code) | Transaction listing, insert, and delete authenticate the user, scope queries by verified `user_id`, and rely on RLS. |
-| Account/role authorization | Частично | No admin role exists. Transactions, accounts, budgets, and goals now have authenticated server CRUD endpoints with user-scoped queries and RLS. Full end-to-end authorization tests are still pending. |
+| Account/role authorization | Частично | No admin role exists. Transactions, accounts, budgets, and goals now have authenticated read/create/delete endpoints with user-scoped queries and RLS; update flows are not implemented yet. Full end-to-end authorization tests are still pending. |
 | Local data isolation | ОК (code) | localStorage keys are namespaced by account ID; this is device-local separation, not cloud sync. |
 
 ## Remaining checks
