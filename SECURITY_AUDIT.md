@@ -15,14 +15,14 @@ Updated: 2026-11-11. Scope: current `fix/nextjs-project-structure` branch and co
 | Input validation | Implemented in code | Amount/currency/type/text/date validation; goal deadlines validate real calendar dates. |
 | FX rates | Implemented in code | Server-side provider route, 8-second timeout, rate validation, and rejection of rates older than 48 hours. |
 | Security headers | Configured | CSP, HSTS in production, X-Content-Type-Options, frame protection, Referrer-Policy, Permissions-Policy. Live headers still need verification. |
-| Dependencies | Verified in CI | Next.js 16.4.6, React 19.2.4, PostCSS 8.5.23, Recharts 3.10.1; committed package-lock.json; `npm ci` succeeds; `npm audit` reported 0 vulnerabilities. |
+| Dependencies | Verified in CI | Next.js 16.4.6, React 19.2.4, PostCSS 8.5.23, Recharts 3.10.1; committed package-lock.json; `npm ci` succeeds; `npm audit --audit-level=moderate` reported 0 vulnerabilities. |
 
 ## Connected environment
 
 - Vercel production environment variables contain the Supabase project URL and anon key; the URL matches the connected Supabase project.
 - Supabase has five application tables; all are currently empty.
 - Supabase Auth user count is zero. Real registration/login/CRUD and two-user isolation have not yet been tested.
-- GitHub Actions run #250 passed `npm ci`, `npm audit`, TypeScript, static security smoke checks, and production build. The two-user integration job was skipped because test users/secrets are not configured.
+- GitHub Actions run #261 passed `npm ci`, `npm audit`, TypeScript, static security smoke checks, and production build. The two-user integration job was skipped because test users/secrets are not configured.
 - Vercel project Node.js runtime is 22.x. Preview SSO protection is enabled; production is configured to be public once a production deployment exists.
 - The latest Vercel deployment is a READY **preview** built from older commit `4fcac69`; it is not the current branch head. Vercel reports `live: false`. No current production deployment is confirmed.
 - Earlier Vercel deployment attempts hit the team's 24-hour deployment quota. The newest code still needs a deployment after that quota resets.
