@@ -31,7 +31,7 @@ const today = new Date().toISOString().slice(0, 10);
 
 try {
   const fixtures = [
-    ["accounts", { user_id: a.user.id, client_id: `rls-${suffix}`, name: `RLS test ${suffix}`, balance: 12.34, currency: "EUR" }],
+    ["accounts", { user_id: a.user.id, name: `RLS test ${suffix}`, balance: 12.34, currency: "EUR" }],
     ["transactions", { user_id: a.user.id, client_id: `rls-${suffix}`, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today, account_name: "RLS test" }],
     ["budgets", { user_id: a.user.id, category: `RLS-${suffix}`, amount_limit: 100, currency: "EUR" }],
     ["goals", { user_id: a.user.id, client_id: `rls-${suffix}`, title: `RLS test ${suffix}`, target: 100, saved: 10, currency: "EUR" }]
@@ -55,6 +55,10 @@ try {
     const { data: visible, error: ownReadError } = await a.client.from(table).select("id").eq("id", data.id);
     if (ownReadError) throw new Error(`User A read failed for ${table}: ${ownReadError.message}`);
     assert.equal(visible.length, 1, `User A cannot read own ${table} row`);
+
+    const { data: deleted, error: deleteError } = await b.client.from(table).delete().eq("id", data.id).select("id");
+    if (deleteError) throw new Error(`User B delete check failed for ${table}: ${deleteError.message}`);
+    assert.equal(deleted.length, 0, `RLS leak: user B can delete user A's ${table} row`);
   }
   console.log("Supabase RLS integration checks passed for accounts, transactions, budgets, and goals.");
 } finally {
