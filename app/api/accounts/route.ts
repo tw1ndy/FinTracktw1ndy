@@ -81,7 +81,15 @@ export async function DELETE(request: Request) {
     const id = new URL(request.url).searchParams.get("id");
     if (!id || id.length > 100) return jsonError("Не указан счёт.");
     const client = getUserScopedClient(session.access);
-    const { data, error } = await client.from("accounts").delete().eq("id", id).eq("user_id", session.user.id).select("id").single();
+    const { data: account, error: accountError } = await client.from("accounts")
+      .select("name").eq("id", id).eq("user_id", session.user.id).single();
+    if (accountError || !account) return jsonError("Счёт не найден.", 404);
+    const { data: linked, error: linkedError } = await client.from("transactions")
+      .select("id").eq("user_id", session.user.id).eq("account_name", account.name).limit(1);
+    if (linkedError) return jsonError("Не удалось проверить операции счёта.", 400);
+    if (linked?.length) return jsonError("Нельзя удалить счёт, пока к нему привязаны операции.", 409);
+    const { data, error } = await client.from("accounts").delete()
+      .eq("id", id).eq("user_id", session.user.id).select("id").single();
     if (error || !data) return jsonError("Не удалось удалить счёт.", 404);
     return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка удаления счёта.", 400); }
