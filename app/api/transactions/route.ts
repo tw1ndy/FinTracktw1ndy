@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { allowRequest } from "@/lib/rate-limit";
+import { allowRequest, getClientIp } from "@/lib/rate-limit";
 import { assertSameOrigin, getSupabaseAdminlessClient, getUserScopedClient, jsonError } from "@/lib/server-supabase";
 const currencies = new Set(["RUB","USD","EUR","GBP","CNY","TRY","AED","CHF","JPY","CAD"]);
 const types = new Set(["income","expense"]);
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     assertSameOrigin(request);
     const session = await getAuthenticatedUser();
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getClientIp(request);
     if (!allowRequest(`tx:${session.user.id}:${ip}`, 30, 60 * 60 * 1000)) return jsonError("Слишком много операций. Попробуйте позже.", 429);
     const body = await request.json();
     const title = typeof body.title === "string" ? body.title.trim() : "";
