@@ -27,7 +27,7 @@ export async function GET() {
     const transactions = (data || []).map((row) => ({
       id: row.id, title: row.title, amount: Number(row.amount), currency: row.currency,
       type: row.type, category: row.category, date: row.tx_date,
-      accountId: row.account_id, account: row.accounts?.[0]?.name || "",
+      accountId: row.account_id, account: (Array.isArray(row.accounts) ? row.accounts[0] : row.accounts)?.name || "",
       ...(row.note ? { note: row.note } : {}),
     }));
     return Response.json({ transactions }, { headers: { "Cache-Control": "no-store" } });
@@ -70,6 +70,8 @@ export async function PATCH(request: Request) {
     assertSameOrigin(request);
     const session = await getAuthenticatedUser();
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!allowRequest(`tx:${session.user.id}:${ip}`, 30, 60 * 60 * 1000)) return jsonError("Слишком много операций. Попробуйте позже.", 429);
     const body = await request.json();
     const id = typeof body.id === "string" ? body.id : "";
     const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -97,7 +99,7 @@ export async function PATCH(request: Request) {
     return Response.json({ transaction: {
       id: data.id, title: data.title, amount: Number(data.amount), currency: data.currency,
       type: data.type, category: data.category, date: data.tx_date, accountId: data.account_id,
-      account: data.accounts?.[0]?.name || "", ...(data.note ? { note: data.note } : {}),
+      account: (Array.isArray(data.accounts) ? data.accounts[0] : data.accounts)?.name || "", ...(data.note ? { note: data.note } : {}),
     } }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка обновления операции.", 400);
@@ -109,6 +111,8 @@ export async function DELETE(request: Request) {
     assertSameOrigin(request);
     const session = await getAuthenticatedUser();
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!allowRequest(`tx:${session.user.id}:${ip}`, 30, 60 * 60 * 1000)) return jsonError("Слишком много операций. Попробуйте позже.", 429);
     const id = new URL(request.url).searchParams.get("id");
     if (!id || id.length > 100) return jsonError("Не указана операция.");
     const client = getUserScopedClient(session.access);
