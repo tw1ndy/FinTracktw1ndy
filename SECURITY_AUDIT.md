@@ -12,8 +12,8 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | CSRF | ОК (code, same-origin model) | Mutating routes reject requests without the exact `Origin`; cookies use `SameSite=Lax`. Re-test behind the final proxy/domain. |
 | Password reset | Частично | Reset request and token-hash confirmation route added. Supabase email template and token lifetime still need configuration and live testing. |
 | Login/resource rate limits | Частично | In-memory best-effort limits added. Not sufficient for serverless/multi-instance production; add shared Redis/Upstash limiter and configure Supabase Auth limits. |
-| Server-side transaction access | ОК (code) | Transaction insert authenticates the user and derives `user_id` from the verified session. |
-| Account/role authorization | Частично | No admin role exists; only transaction insert is currently server-routed. Other financial entities remain local-only. |
+| Server-side transaction access | ОК (code) | Transaction listing, insert, and delete authenticate the user, scope queries by verified `user_id`, and rely on RLS. |
+| Account/role authorization | Частично | No admin role exists; transaction listing, insert, and delete are server-routed; accounts, budgets, and goals remain local-only. Other financial entities remain local-only. |
 | Local data isolation | ОК (code) | localStorage keys are namespaced by account ID; this is device-local separation, not cloud sync. |
 
 ## Remaining checks
@@ -28,7 +28,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | RLS | ОК (SQL prepared; deployment pending) | Hardened policies target `authenticated`, force RLS, revoke table access from `anon`. Run `supabase/security-hardening.sql` in the actual project. |
 | Password hashing | Неприменимо (app code) | Password storage is delegated to Supabase Auth; no local password table exists. Confirm provider-side password/security settings. |
 | Parameterized database access | ОК (code) | Supabase query builder used; no raw user-concatenated SQL found. |
-| Server validation | Частично | New transaction route validates data. Budgets/goals/accounts remain local-only and do not have server CRUD endpoints. |
+| Server validation | Частично | Transaction create/list/delete routes validate and scope data. Budgets/goals/accounts remain local-only and do not have server CRUD endpoints. |
 | XSS | Частично | React escapes normal text and no `dangerouslySetInnerHTML` was found. Full runtime/content audit remains. |
 | Prices/payments | Неприменимо | No billing or payment processing exists. |
 | HTTPS/security headers | ОК (configuration) | HSTS is production-only; CSP and other security headers added. Verify final hosting/proxy behavior. |
@@ -44,7 +44,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 - Replaced browser-managed Supabase auth with server endpoints for login, signup, logout, session checks, and password reset initiation.
 - Added HttpOnly session cookies with production `Secure` and `SameSite=Lax`.
 - Added same-origin checks for state-changing auth and transaction endpoints.
-- Added server-side validation and authenticated insert for transactions.
+- Added authenticated transaction listing, insert, and delete with server-side validation and user scoping.
 - Namespaced localStorage data by user ID to avoid mixing local records between accounts on one browser.
 - Added basic per-instance rate limits (not a production distributed limiter).
 - Added security response headers and `.env` ignore rules.
