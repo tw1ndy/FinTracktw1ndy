@@ -15,8 +15,8 @@ const fmtDate = (d:string) => new Date(d+"T12:00:00").toLocaleDateString("ru-RU"
 function useStored<T>(key:string, initial:T) {
  const [value,setValue] = useState<T>(initial);
  const [loadedKey,setLoadedKey]=useState<string|null>(null);
- useEffect(()=>{setLoadedKey(null);setValue(initial);try{const v=localStorage.getItem(key);if(v)setValue(JSON.parse(v));}catch{}finally{setLoadedKey(key);}},[key]);
- useEffect(()=>{if(loadedKey!==key)return;try{localStorage.setItem(key,JSON.stringify(value));}catch{}},[key,value,loadedKey]);
+ useEffect(()=>{setLoadedKey(null);setValue(initial);if(key.endsWith("_guest")){try{const v=localStorage.getItem(key);if(v)setValue(JSON.parse(v));}catch{}}setLoadedKey(key);},[key]);
+ useEffect(()=>{if(loadedKey!==key)return;if(!key.endsWith("_guest")){try{localStorage.removeItem(key);}catch{}return;}try{localStorage.setItem(key,JSON.stringify(value));}catch{}},[key,value,loadedKey]);
  return [value,setValue] as const;
 }
 export default function Home(){
