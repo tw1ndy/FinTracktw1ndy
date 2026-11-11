@@ -4,6 +4,9 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const helper = read("lib/server-supabase.ts");
 const login = read("app/api/auth/login/route.ts");
 const tx = read("app/api/transactions/route.ts");
+const accounts = read("app/api/accounts/route.ts");
+const goals = read("app/api/goals/route.ts");
+const migration = read("app/api/migrate/route.ts");
 const sql = read("supabase/security-hardening.sql");
 const ignore = read(".gitignore");
 const config = read("next.config.mjs");
@@ -28,6 +31,7 @@ for (const p of [
   "app/reset-password/page.tsx",
   "app/api/auth/password/route.ts",
   "app/api/auth/session/route.ts",
+  "app/api/migrate/route.ts",
   "lib/types.ts",
   "lib/fx.ts"
 ]) assert.ok(existsSync(new URL(`../${p}`, import.meta.url)), `Missing ${p}`);
