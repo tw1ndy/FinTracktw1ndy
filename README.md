@@ -73,7 +73,7 @@ SUPABASE_TEST_USER_B_PASSWORD=...
 - The in-process rate limiter is only a best-effort development guard and is not shared across serverless instances. Configure Supabase Auth rate limits and add a shared Redis/Upstash limiter before a public launch.
 - Supabase's project API is reachable over the internet by design. RLS and least-privilege grants protect rows; configure Supabase network restrictions where your plan supports them. Never expose a `service_role` key.
 - Recovery email templates must pass `token_hash` to `/auth/confirm`; otherwise the custom HttpOnly-cookie recovery flow will not complete.
-- Run `npm run security:smoke` for static security smoke checks. Install with `npm ci` from the committed lockfile and run `npm audit --audit-level=high`.
+- Run `npm run security:smoke` for static security smoke checks. Install with `npm ci` from the committed lockfile and run `npm audit --audit-level=moderate`.
 
 ## Financial data behavior
 - Transactions support cloud create, edit, and delete operations.
