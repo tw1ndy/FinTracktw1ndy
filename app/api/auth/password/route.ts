@@ -19,5 +19,8 @@ export async function POST(request: Request) {
     const response = Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     if (session.data.session) setSessionCookies(response, session.data.session.access_token, session.data.session.refresh_token, session.data.session.expires_in);
     return response;
-  } catch { return jsonError("Ошибка обновления пароля.", 403); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid request origin") return jsonError("Недопустимый источник запроса.", 403);
+    return jsonError("Ошибка обновления пароля.", 500);
+  }
 }
