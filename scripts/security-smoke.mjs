@@ -13,7 +13,10 @@ const fx = read("app/api/fx/route.ts");
 const sql = read("supabase/security-hardening.sql");
 const ignore = read(".gitignore");
 const config = read("next.config.mjs");
+const lock = JSON.parse(read("package-lock.json"));
 
+assert.equal(lock.lockfileVersion, 3);
+assert.ok(lock.packages["node_modules/next"].version.startsWith("16."));
 assert.ok(helper.includes("HttpOnly"));
 assert.ok(helper.includes("SameSite=Lax"));
 assert.ok(helper.includes('NODE_ENV === "production" ? "; Secure"'));
