@@ -21,15 +21,15 @@ drop policy if exists "budgets own rows" on public.budgets;
 drop policy if exists "goals own rows" on public.goals;
 
 create policy "profile own row" on public.profiles
-  for all to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+  for all to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 create policy "accounts own rows" on public.accounts
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "transactions own rows" on public.transactions
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "budgets own rows" on public.budgets
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "goals own rows" on public.goals
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 revoke all on table public.profiles, public.accounts, public.transactions, public.budgets, public.goals from anon;
 grant select, insert, update, delete on table public.profiles, public.accounts, public.transactions, public.budgets, public.goals to authenticated;
