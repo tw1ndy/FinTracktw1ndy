@@ -50,6 +50,9 @@ export async function POST(request: Request) {
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date) return jsonError("Некорректная дата.");
     const client = getUserScopedClient(session.access);
+    const { data: matchingAccounts, error: accountLookupError } = await client.from("accounts").select("id").eq("user_id", session.user.id).eq("name", account);
+    if (accountLookupError) return jsonError("Не удалось проверить счёт операции.", 400);
+    if (!matchingAccounts || matchingAccounts.length !== 1) return jsonError("Укажите существующий счёт с уникальным названием.", 400);
     const { data, error } = await client.from("transactions").insert({
       user_id: session.user.id, title, amount, currency: body.currency, type: body.type,
       category, tx_date: date, account_name: account, note: typeof body.note === "string" ? body.note.slice(0,500) : null,
@@ -74,12 +77,15 @@ export async function PATCH(request: Request) {
     const date = typeof body.date === "string" ? body.date : "";
     if (!id || id.length > 100 || !title || title.length > 100 || !category || category.length > 60 ||
       !account || account.length > 80 || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000 ||
-      !currencies.has(body.currency) || !types.has(body.type) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date))
+      !currencies.has(body.currency) || !types.has(body.type) || !/^\d{4}-\d{2}-\d{2}$/.test(date))
       return jsonError("Проверьте поля операции.");
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date)
       return jsonError("Некорректная дата.");
     const client = getUserScopedClient(session.access);
+    const { data: matchingAccounts, error: accountLookupError } = await client.from("accounts").select("id").eq("user_id", session.user.id).eq("name", account);
+    if (accountLookupError) return jsonError("Не удалось проверить счёт операции.", 400);
+    if (!matchingAccounts || matchingAccounts.length !== 1) return jsonError("Укажите существующий счёт с уникальным названием.", 400);
     const { data, error } = await client.from("transactions").update({
       title, amount, currency: body.currency, type: body.type, category, tx_date: date,
       account_name: account, note: typeof body.note === "string" ? body.note.slice(0, 500) : null,
