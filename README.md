@@ -80,3 +80,5 @@ SUPABASE_TEST_USER_B_PASSWORD=...
 - Accounts, budgets, and savings goals are managed through authenticated API routes; rows are scoped to the signed-in user by Supabase RLS.
 - An account's stored `balance` is its starting balance. The displayed balance is recalculated from that amount plus/minus linked income and expense transactions. Transactions in another currency are converted using the currently loaded reference rates; if a required rate is unavailable, the derived balance is shown as unavailable rather than guessed.
 - Accounts with linked transactions cannot be deleted until those transactions are removed or moved.
+- Starting account balances and savings-goal progress are entered manually by the user. There is no bank/Open Banking connection in this build; these values are not independently verified against a bank statement.
+- The dashboard and charts include only records loaded from the signed-in Supabase account. Empty periods are not filled with fabricated chart values. Missing or ambiguous account links and missing FX rates make derived totals unavailable instead of guessing.
