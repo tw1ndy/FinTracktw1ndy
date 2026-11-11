@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const deadline = body.deadline == null || body.deadline === "" ? null : String(body.deadline);
     if (!title || title.length > 100 || !Number.isFinite(target) || target <= 0 || target > 1_000_000_000 ||
       !Number.isFinite(saved) || saved < 0 || saved > target || !currencies.has(body.currency) ||
-      (deadline !== null && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)))
+      (deadline !== null && !isValidDate(deadline)))
       return jsonError("Проверьте название, суммы, валюту и срок цели.");
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("goals")
@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
     const deadline = body.deadline == null || body.deadline === "" ? null : String(body.deadline);
     if (!id || id.length > 100 || !title || title.length > 100 || !Number.isFinite(target) || target <= 0 ||
       target > 1_000_000_000 || !Number.isFinite(saved) || saved < 0 || saved > target ||
-      !currencies.has(body.currency) || (deadline !== null && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)))
+      !currencies.has(body.currency) || (deadline !== null && !isValidDate(deadline)))
       return jsonError("Проверьте данные цели.");
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("goals").update({ title, target, saved, currency: body.currency, deadline })
