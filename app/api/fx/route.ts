@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     return Response.json({
       base,
       rates,
-      updated: payload.time_last_update_utc || null,
+      updated: typeof payload.time_last_update_utc === "string" ? payload.time_last_update_utc : "",
       nextUpdate: payload.time_next_update_utc || null,
       source: "ExchangeRate-API Open Access (daily reference rates)",
     }, { headers: { "Cache-Control": "no-store" } });
