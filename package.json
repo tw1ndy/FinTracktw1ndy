@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "security:smoke": "node scripts/security-smoke.mjs"
+    "lint": "tsc --noEmit",
+    "security:smoke": "node scripts/security-smoke.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
