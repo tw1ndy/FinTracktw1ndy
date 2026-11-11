@@ -14,7 +14,7 @@ assert.match(helper, /origin !== expected/);
 assert.match(login, /signInWithPassword/);
 assert.match(login, /allowRequest/);
 assert.match(tx, /auth\.getUser\(access\)/);
-assert.match(tx, /user_id: auth\.user\.id/);
+assert.match(tx, /user_id: session.user.id/);
 assert.match(tx, /Number\.isFinite\(amount\)/);
 assert.match(sql, /force row level security/i);
 assert.match(sql, /to authenticated/i);
