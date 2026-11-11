@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     if (access && refresh) {
       const client = getSupabaseAdminlessClient();
       const session = await client.auth.setSession({ access_token: access, refresh_token: refresh });
-      if (!session.error) await client.auth.signOut();
+      if (!session.error) await client.auth.signOut({ scope: "local" });
     }
     const response = Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } }); clearSessionCookies(response); return response;
   } catch { const response = Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } }); clearSessionCookies(response); return response; }
