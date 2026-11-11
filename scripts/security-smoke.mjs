@@ -3,32 +3,44 @@ import assert from "node:assert/strict";
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const helper = read("lib/server-supabase.ts");
 const login = read("app/api/auth/login/route.ts");
+const page = read("app/page.tsx");
 const tx = read("app/api/transactions/route.ts");
 const accounts = read("app/api/accounts/route.ts");
+const budgets = read("app/api/budgets/route.ts");
 const goals = read("app/api/goals/route.ts");
-const migration = read("app/api/migrate/route.ts");
+const fx = read("app/api/fx/route.ts");
 const sql = read("supabase/security-hardening.sql");
 const ignore = read(".gitignore");
 const config = read("next.config.mjs");
+
 assert.match(helper, /HttpOnly/);
 assert.match(helper, /SameSite=Lax/);
-assert.match(helper, /NODE_ENV === "production" \? "; Secure"/);
+assert.match(helper, /NODE_ENV === "production" \\? "; Secure"/);
 assert.match(helper, /origin !== expected/);
 assert.match(login, /signInWithPassword/);
 assert.match(login, /allowRequest/);
-assert.match(tx, /auth\.getUser\(access\)/);
-assert.match(tx, /user_id: session.user.id/);
-assert.match(tx, /Number\.isFinite\(amount\)/);
+assert.match(tx, /auth\\.getUser\\(access\\)/);
+assert.match(tx, /user_id: session\\.user\\.id/);
+assert.match(tx, /Number\\.isFinite\\(amount\\)/);
+assert.match(tx, /export async function PATCH/);
+assert.match(tx, /export async function DELETE/);
 assert.match(accounts, /export async function PATCH/);
+assert.match(accounts, /export async function DELETE/);
+assert.match(budgets, /upsert\\(/);
+assert.match(budgets, /export async function DELETE/);
 assert.match(goals, /export async function PATCH/);
-assert.ok(migration.includes("auth.getUser(access)"));
-assert.match(migration, /onConflict: "user_id,client_id"/);
-assert.match(migration, /ignoreDuplicates: true/);
+assert.match(goals, /export async function DELETE/);
+assert.match(fx, /open\\.er-api\\.com/);
 assert.match(sql, /force row level security/i);
 assert.match(sql, /to authenticated/i);
-assert.match(ignore, /^\.env$/m);
-assert.match(ignore, /^\.env\.\*$/m);
+assert.match(ignore, /^\\.env$/m);
+assert.match(ignore, /^\\.env\\.\\*$/m);
 assert.match(config, /Content-Security-Policy/);
+assert.doesNotMatch(page, /localStorage\\.setItem|useStored/);
+assert.doesNotMatch(tx, /client_id/);
+assert.doesNotMatch(goals, /client_id/);
+assert.equal(existsSync(new URL("../app/api/migrate/route.ts", import.meta.url)), false);
+
 for (const p of [
   "app/page.tsx",
   "app/layout.tsx",
@@ -36,7 +48,6 @@ for (const p of [
   "app/reset-password/page.tsx",
   "app/api/auth/password/route.ts",
   "app/api/auth/session/route.ts",
-  "app/api/migrate/route.ts",
   "lib/types.ts",
   "lib/fx.ts"
 ]) assert.ok(existsSync(new URL(`../${p}`, import.meta.url)), `Missing ${p}`);
