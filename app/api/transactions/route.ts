@@ -20,14 +20,15 @@ export async function GET() {
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("transactions")
-      .select("id,title,amount,currency,type,category,tx_date,account_name,note")
+      .select("id,title,amount,currency,type,category,tx_date,account_id,note,accounts(name)")
       .eq("user_id", session.user.id)
       .order("tx_date", { ascending: false });
     if (error) return jsonError("Не удалось загрузить операции.", 400);
     const transactions = (data || []).map((row) => ({
       id: row.id, title: row.title, amount: Number(row.amount), currency: row.currency,
       type: row.type, category: row.category, date: row.tx_date,
-      account: row.account_name, ...(row.note ? { note: row.note } : {}),
+      accountId: row.account_id, account: row.accounts?.name || "",
+      ...(row.note ? { note: row.note } : {}),
     }));
     return Response.json({ transactions }, { headers: { "Cache-Control": "no-store" } });
   } catch { return jsonError("Ошибка загрузки операций.", 500); }
@@ -43,25 +44,26 @@ export async function POST(request: Request) {
     const body = await request.json();
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const category = typeof body.category === "string" ? body.category.trim() : "";
-    const account = typeof body.account === "string" ? body.account.trim() : "";
+    const accountId = typeof body.accountId === "string" ? body.accountId : "";
     const amount = Number(body.amount);
     const date = typeof body.date === "string" ? body.date : "";
-    if (!title || title.length > 100 || !category || category.length > 60 || !account || account.length > 80 || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000 || !currencies.has(body.currency) || !types.has(body.type) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return jsonError("Проверьте поля операции.");
+    if (!title || title.length > 100 || !category || category.length > 60 || !accountId || accountId.length > 100 ||
+      !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000 || !currencies.has(body.currency) ||
+      !types.has(body.type) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return jsonError("Проверьте поля операции.");
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date) return jsonError("Некорректная дата.");
     const client = getUserScopedClient(session.access);
-    const { data: matchingAccounts, error: accountLookupError } = await client.from("accounts").select("id").eq("user_id", session.user.id).eq("name", account);
-    if (accountLookupError) return jsonError("Не удалось проверить счёт операции.", 400);
-    if (!matchingAccounts || matchingAccounts.length !== 1) return jsonError("Укажите существующий счёт с уникальным названием.", 400);
+    const { data: account, error: accountError } = await client.from("accounts")
+      .select("id,name").eq("id", accountId).eq("user_id", session.user.id).single();
+    if (accountError || !account) return jsonError("Укажите существующий счёт.", 400);
     const { data, error } = await client.from("transactions").insert({
-      user_id: session.user.id, title, amount, currency: body.currency, type: body.type,
-      category, tx_date: date, account_name: account, note: typeof body.note === "string" ? body.note.slice(0,500) : null,
+      user_id: session.user.id, account_id: account.id, title, amount, currency: body.currency,
+      type: body.type, category, tx_date: date, note: typeof body.note === "string" ? body.note.slice(0,500) : null,
     }).select("id").single();
     if (error) return jsonError("Не удалось сохранить операцию.", 400);
     return Response.json({ id: data.id }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка сохранения операции.", 400); }
 }
-
 
 export async function PATCH(request: Request) {
   try {
@@ -72,34 +74,33 @@ export async function PATCH(request: Request) {
     const id = typeof body.id === "string" ? body.id : "";
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const category = typeof body.category === "string" ? body.category.trim() : "";
-    const account = typeof body.account === "string" ? body.account.trim() : "";
+    const accountId = typeof body.accountId === "string" ? body.accountId : "";
     const amount = Number(body.amount);
     const date = typeof body.date === "string" ? body.date : "";
     if (!id || id.length > 100 || !title || title.length > 100 || !category || category.length > 60 ||
-      !account || account.length > 80 || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000 ||
-      !currencies.has(body.currency) || !types.has(body.type) || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+      !accountId || accountId.length > 100 || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000 ||
+      !currencies.has(body.currency) || !types.has(body.type) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date))
       return jsonError("Проверьте поля операции.");
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date)
       return jsonError("Некорректная дата.");
     const client = getUserScopedClient(session.access);
-    const { data: matchingAccounts, error: accountLookupError } = await client.from("accounts").select("id").eq("user_id", session.user.id).eq("name", account);
-    if (accountLookupError) return jsonError("Не удалось проверить счёт операции.", 400);
-    if (!matchingAccounts || matchingAccounts.length !== 1) return jsonError("Укажите существующий счёт с уникальным названием.", 400);
+    const { data: account, error: accountError } = await client.from("accounts")
+      .select("id,name").eq("id", accountId).eq("user_id", session.user.id).single();
+    if (accountError || !account) return jsonError("Укажите существующий счёт.", 400);
     const { data, error } = await client.from("transactions").update({
       title, amount, currency: body.currency, type: body.type, category, tx_date: date,
-      account_name: account, note: typeof body.note === "string" ? body.note.slice(0, 500) : null,
+      account_id: account.id, note: typeof body.note === "string" ? body.note.slice(0, 500) : null,
     }).eq("id", id).eq("user_id", session.user.id)
-      .select("id,title,amount,currency,type,category,tx_date,account_name,note").single();
+      .select("id,title,amount,currency,type,category,tx_date,account_id,note,accounts(name)").single();
     if (error || !data) return jsonError("Не удалось обновить операцию.", 404);
     return Response.json({ transaction: {
       id: data.id, title: data.title, amount: Number(data.amount), currency: data.currency,
-      type: data.type, category: data.category, date: data.tx_date, account: data.account_name,
-      ...(data.note ? { note: data.note } : {}),
+      type: data.type, category: data.category, date: data.tx_date, accountId: data.account_id,
+      account: data.accounts?.name || "", ...(data.note ? { note: data.note } : {}),
     } }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return jsonError(error instanceof Error && error.message === "Invalid request origin"
-      ? "Недопустимый источник запроса." : "Ошибка обновления операции.", 400);
+    return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка обновления операции.", 400);
   }
 }
 
