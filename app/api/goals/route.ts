@@ -56,6 +56,30 @@ export async function POST(request: Request) {
   } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка сохранения цели.", 400); }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    assertSameOrigin(request);
+    const session = await getAuthenticatedUser();
+    if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    if (!rateLimit(request, session.user.id, "goals-update")) return jsonError("Слишком много запросов.", 429);
+    const body = await request.json();
+    const id = typeof body.id === "string" ? body.id : "";
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    const target = Number(body.target);
+    const saved = Number(body.saved);
+    const deadline = body.deadline == null || body.deadline === "" ? null : String(body.deadline);
+    if (!id || id.length > 100 || !title || title.length > 100 || !Number.isFinite(target) || target <= 0 ||
+      target > 1_000_000_000 || !Number.isFinite(saved) || saved < 0 || saved > target ||
+      !currencies.has(body.currency) || (deadline !== null && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)))
+      return jsonError("Проверьте данные цели.");
+    const client = getUserScopedClient(session.access);
+    const { data, error } = await client.from("goals").update({ title, target, saved, currency: body.currency, deadline })
+      .eq("id", id).eq("user_id", session.user.id).select("id,title,target,saved,currency,deadline").single();
+    if (error || !data) return jsonError("Не удалось обновить цель.", 404);
+    return Response.json({ goal: { ...data, target: Number(data.target), saved: Number(data.saved) } }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка обновления цели.", 400); }
+}
+
 export async function DELETE(request: Request) {
   try {
     assertSameOrigin(request);
