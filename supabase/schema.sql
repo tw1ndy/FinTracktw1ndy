@@ -9,7 +9,6 @@ create table if not exists public.profiles (
 create table if not exists public.accounts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  client_id text,
   name text not null,
   balance numeric(18,2) not null default 0,
   currency text not null default 'EUR',
@@ -18,7 +17,6 @@ create table if not exists public.accounts (
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  client_id text,
   title text not null,
   amount numeric(18,2) not null check (amount > 0),
   currency text not null,
@@ -41,7 +39,6 @@ create table if not exists public.budgets (
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  client_id text,
   title text not null,
   target numeric(18,2) not null check (target > 0),
   saved numeric(18,2) not null default 0 check (saved >= 0),
