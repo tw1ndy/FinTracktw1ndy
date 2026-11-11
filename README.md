@@ -24,7 +24,7 @@ npm run dev
 
 ## Облачная база и авторизация
 1. Создайте проект в Supabase.
-2. Откройте SQL Editor и выполните `supabase/schema.sql`, затем `supabase/security-hardening.sql`, затем `supabase/local-data-migration.sql`.
+2. Откройте SQL Editor и выполните `supabase/schema.sql`, затем `supabase/security-hardening.sql`.
 3. В Project Settings → API скопируйте Project URL и anon/public key.
 4. Заполните `.env.local`:
 
