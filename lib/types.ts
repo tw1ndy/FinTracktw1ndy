@@ -2,7 +2,7 @@ export type Currency = "RUB" | "USD" | "EUR" | "GBP" | "CNY" | "TRY" | "AED" | "
 export type TxType = "income" | "expense";
 export type Transaction = {
   id: string; title: string; amount: number; currency: Currency; type: TxType;
-  category: string; date: string; account: string; note?: string;
+  category: string; date: string; accountId: string; account: string; note?: string;
 };
 export type Budget = { id: string; category: string; limit: number; currency: Currency };
 export type Goal = { id: string; title: string; target: number; saved: number; currency: Currency; deadline?: string };
