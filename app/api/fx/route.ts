@@ -9,11 +9,15 @@ export async function GET(request: NextRequest) {
   const base = (request.nextUrl.searchParams.get("base") || "EUR").toUpperCase();
   if (!(CURRENCIES as readonly string[]).includes(base)) return Response.json({ error: "Unsupported base currency." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   try {
-    const upstream = await fetch(`${PROVIDER}/${base}`, { cache: "no-store", headers: { Accept: "application/json" } });
+    const upstream = await fetch(`${PROVIDER}/${base}`, { cache: "no-store", signal: AbortSignal.timeout(8_000), headers: { Accept: "application/json" } });
     if (!upstream.ok) return Response.json({ error: "Currency provider is unavailable." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     const payload = await upstream.json();
     if (payload?.result !== "success" || !payload?.rates || typeof payload.rates !== "object")
       return Response.json({ error: "Currency provider returned invalid data." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    const updated = typeof payload.time_last_update_utc === "string" ? payload.time_last_update_utc : "";
+    const updatedAt = Date.parse(updated);
+    if (!Number.isFinite(updatedAt) || updatedAt > Date.now() + 5 * 60 * 1000 || Date.now() - updatedAt > 48 * 60 * 60 * 1000)
+      return Response.json({ error: "Currency provider returned stale rates." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     const rates: Record<string, number> = {};
     for (const currency of CURRENCIES) {
       const value = Number(payload.rates[currency]);
@@ -23,7 +27,7 @@ export async function GET(request: NextRequest) {
     return Response.json({
       base,
       rates,
-      updated: typeof payload.time_last_update_utc === "string" ? payload.time_last_update_utc : "",
+      updated,
       nextUpdate: payload.time_next_update_utc || null,
       source: "ExchangeRate-API Open Access (daily reference rates)",
     }, { headers: { "Cache-Control": "no-store" } });
