@@ -34,6 +34,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 ```
 
 5. Перезапустите `npm run dev`.
+
+### Проверка изоляции Supabase
+Создайте два отдельных тестовых пользователя в Supabase Auth. Перед запуском задайте переменные окружения (не коммитьте их и не отправляйте в чат):
+
+```env
+SUPABASE_TEST_USER_A_EMAIL=...
+SUPABASE_TEST_USER_A_PASSWORD=...
+SUPABASE_TEST_USER_B_EMAIL=...
+SUPABASE_TEST_USER_B_PASSWORD=...
+```
+
+Затем выполните `npm run test:supabase`. Скрипт создаёт временные записи от первого пользователя и проверяет, что второй не может их читать или изменять; тестовые записи удаляются в конце. Запускайте только на тестовом проекте/тестовых аккаунтах.
+
 6. В Supabase → Authentication → URL Configuration укажите URL сайта и добавьте redirect URL `https://ВАШ-ДОМЕН/auth/confirm?next=/reset-password` (для локальной разработки также `http://localhost:3000/auth/confirm?next=/reset-password`).
 7. В шаблоне письма восстановления пароля используйте ссылку с `token_hash`: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`. Для подтверждения регистрации аналогично используйте `type=signup` и `next=/`.
 
