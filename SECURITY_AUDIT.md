@@ -44,7 +44,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 - Replaced browser-managed Supabase auth with server endpoints for login, signup, logout, session checks, and password reset initiation.
 - Added HttpOnly session cookies with production `Secure` and `SameSite=Lax`.
 - Added same-origin checks for state-changing auth and transaction endpoints.
-- Added authenticated transaction listing, insert, and delete with server-side validation and user scoping.
+- Added authenticated transaction, account, budget, and goal listing/create/delete routes with server-side validation and user scoping.
 - Namespaced localStorage data by user ID to avoid mixing local records between accounts on one browser.
 - Added basic per-instance rate limits (not a production distributed limiter).
 - Added security response headers and `.env` ignore rules.
