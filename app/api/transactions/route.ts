@@ -6,7 +6,7 @@ const types = new Set(["income","expense"]);
 export const runtime = "nodejs";
 
 async function getAuthenticatedUser() {
-  const access = cookies().get("ft_access")?.value;
+  const access = (await cookies()).get("ft_access")?.value;
   if (!access) return null;
   const authClient = getSupabaseAdminlessClient();
   const { data, error } = await authClient.auth.getUser(access);
