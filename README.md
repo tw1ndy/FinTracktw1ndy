@@ -74,3 +74,9 @@ SUPABASE_TEST_USER_B_PASSWORD=...
 - Supabase's project API is reachable over the internet by design. RLS and least-privilege grants protect rows; configure Supabase network restrictions where your plan supports them. Never expose a `service_role` key.
 - Recovery email templates must pass `token_hash` to `/auth/confirm`; otherwise the custom HttpOnly-cookie recovery flow will not complete.
 - Run `npm run security:smoke` for static security smoke checks. Run `npm audit` after dependency installation and commit the generated lockfile.
+
+## Financial data behavior
+- Transactions support cloud create, edit, and delete operations.
+- Accounts, budgets, and savings goals are managed through authenticated API routes; rows are scoped to the signed-in user by Supabase RLS.
+- An account's stored `balance` is its starting balance. The displayed balance is recalculated from that amount plus/minus linked income and expense transactions. Transactions in another currency are converted using the currently loaded reference rates; if a required rate is unavailable, the derived balance is shown as unavailable rather than guessed.
+- Accounts with linked transactions cannot be deleted until those transactions are removed or moved.
