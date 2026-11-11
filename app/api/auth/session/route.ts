@@ -8,7 +8,7 @@ function noSession() {
 }
 export async function GET() {
   try {
-    const jar = cookies(); const access = jar.get("ft_access")?.value; const refresh = jar.get("ft_refresh")?.value;
+    const jar = await cookies(); const access = jar.get("ft_access")?.value; const refresh = jar.get("ft_refresh")?.value;
     if (!access) return noSession();
     const client = getSupabaseAdminlessClient();
     const { data, error } = await client.auth.getUser(access);
