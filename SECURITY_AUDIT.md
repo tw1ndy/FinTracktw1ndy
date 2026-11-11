@@ -13,7 +13,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | Password reset | Частично | Reset request and token-hash confirmation route added. Supabase email template and token lifetime still need configuration and live testing. |
 | Login/resource rate limits | Частично | In-memory best-effort limits added. Not sufficient for serverless/multi-instance production; add shared Redis/Upstash limiter and configure Supabase Auth limits. |
 | Server-side transaction access | ОК (code) | Transaction listing, insert, and delete authenticate the user, scope queries by verified `user_id`, and rely on RLS. |
-| Account/role authorization | Частично | No admin role exists. Transactions, accounts, budgets, and goals now have authenticated read/create/delete endpoints with user-scoped queries and RLS; update flows are not implemented yet. Full end-to-end authorization tests are still pending. |
+| Account/role authorization | Частично | No admin role exists. Transactions, accounts, budgets, and goals have authenticated read/create/delete endpoints; accounts and goals also have update endpoints. Queries are user-scoped and rely on RLS. Live authorization tests are still pending. |
 | Local data isolation | ОК (code) | localStorage keys are namespaced by account ID; this is device-local separation, not cloud sync. |
 
 ## Remaining checks
@@ -28,7 +28,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | RLS | ОК (SQL prepared; deployment pending) | Hardened policies target `authenticated`, force RLS, revoke table access from `anon`. Run `supabase/security-hardening.sql` in the actual project. |
 | Password hashing | Неприменимо (app code) | Password storage is delegated to Supabase Auth; no local password table exists. Confirm provider-side password/security settings. |
 | Parameterized database access | ОК (code) | Supabase query builder used; no raw user-concatenated SQL found. |
-| Server validation | Частично | Transaction, account, budget, and goal routes validate inputs and scope reads/writes to the verified user. Live Supabase/RLS tests and update flows remain pending. |
+| Server validation | Частично | Transaction, account, budget, goal, and local migration routes validate inputs and scope writes to the verified user. Account and goal updates are implemented. Live Supabase/RLS tests remain pending. |
 | XSS | Частично | React escapes normal text and no `dangerouslySetInnerHTML` was found. Full runtime/content audit remains. |
 | Prices/payments | Неприменимо | No billing or payment processing exists. |
 | HTTPS/security headers | ОК (configuration) | HSTS is production-only; CSP and other security headers added. Verify final hosting/proxy behavior. |
@@ -44,7 +44,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 - Replaced browser-managed Supabase auth with server endpoints for login, signup, logout, session checks, and password reset initiation.
 - Added HttpOnly session cookies with production `Secure` and `SameSite=Lax`.
 - Added same-origin checks for state-changing auth and transaction endpoints.
-- Added authenticated transaction, account, budget, and goal listing/create/delete routes with server-side validation and user scoping.
+- Added authenticated transaction, account, budget, and goal listing/create/delete routes; account and goal update routes; and an idempotent local-data import endpoint.
 - Namespaced localStorage data by user ID to avoid mixing local records between accounts on one browser.
 - Added basic per-instance rate limits (not a production distributed limiter).
 - Added security response headers and `.env` ignore rules.
@@ -53,8 +53,8 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 
 ## Verification still required before public launch
 
-1. Install dependencies and generate/commit a lockfile; run `npm run build`, `npm run security:smoke`, and `npm audit`.
-2. Configure Supabase redirect allow-list and recovery email template to pass `token_hash` to `/auth/confirm`.
+1. GitHub Actions CI now runs dependency installation, TypeScript checks, static security smoke checks, and a production build. Review the workflow result; generate and commit a lockfile and run `npm audit` before public launch.
+2. Apply `supabase/local-data-migration.sql` after the schema and hardening scripts before using the local import endpoint. Configure Supabase redirect allow-list and recovery email template to pass `token_hash` to `/auth/confirm`.
 3. Apply `supabase/security-hardening.sql` to the real Supabase project and test two users cannot read/write each other's rows.
 4. Verify production cookies, HTTPS, CSP, HSTS, and forbidden paths on the deployed domain.
 5. Scan the complete Git history for secrets and rotate any discovered credentials.
