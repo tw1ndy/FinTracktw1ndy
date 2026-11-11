@@ -36,6 +36,20 @@ try {
   if (accountError || !account) throw new Error(`User A account fixture failed: ${accountError?.message || "no row"}`);
   ids.accounts = account.id;
 
+  const { data: hiddenAccount, error: accountReadError } = await b.client.from("accounts").select("id").eq("id", account.id);
+  if (accountReadError) throw new Error(`User B account read check failed: ${accountReadError.message}`);
+  assert.equal(hiddenAccount.length, 0, "RLS leak: user B can read user A's account");
+  const { data: changedAccount, error: accountUpdateError } = await b.client.from("accounts")
+    .update({ balance: 999 }).eq("id", account.id).select("id");
+  if (accountUpdateError) throw new Error(`User B account update check failed: ${accountUpdateError.message}`);
+  assert.equal(changedAccount.length, 0, "RLS leak: user B can update user A's account");
+  const { data: visibleAccount, error: ownAccountReadError } = await a.client.from("accounts").select("id").eq("id", account.id);
+  if (ownAccountReadError) throw new Error(`User A account read failed: ${ownAccountReadError.message}`);
+  assert.equal(visibleAccount.length, 1, "User A cannot read own account");
+  const { data: deletedAccount, error: accountDeleteError } = await b.client.from("accounts").delete().eq("id", account.id).select("id");
+  if (accountDeleteError) throw new Error(`User B account delete check failed: ${accountDeleteError.message}`);
+  assert.equal(deletedAccount.length, 0, "RLS leak: user B can delete user A's account");
+
   const fixtures = [
     ["transactions", { user_id: a.user.id, account_id: account.id, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today }],
     ["budgets", { user_id: a.user.id, category: `RLS-${suffix}`, amount_limit: 100, currency: "EUR" }],
