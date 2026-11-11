@@ -28,7 +28,7 @@ Scope: source archive v2.0 plus the changes in this security pass. This is a sou
 | RLS | ОК (SQL prepared; deployment pending) | Hardened policies target `authenticated`, force RLS, revoke table access from `anon`. Run `supabase/security-hardening.sql` in the actual project. |
 | Password hashing | Неприменимо (app code) | Password storage is delegated to Supabase Auth; no local password table exists. Confirm provider-side password/security settings. |
 | Parameterized database access | ОК (code) | Supabase query builder used; no raw user-concatenated SQL found. |
-| Server validation | Частично | Transaction create/list/delete routes validate and scope data. Budgets/goals/accounts remain local-only and do not have server CRUD endpoints. |
+| Server validation | Частично | Transaction, account, budget, and goal routes validate inputs and scope reads/writes to the verified user. Live Supabase/RLS tests and update flows remain pending. |
 | XSS | Частично | React escapes normal text and no `dangerouslySetInnerHTML` was found. Full runtime/content audit remains. |
 | Prices/payments | Неприменимо | No billing or payment processing exists. |
 | HTTPS/security headers | ОК (configuration) | HSTS is production-only; CSP and other security headers added. Verify final hosting/proxy behavior. |
