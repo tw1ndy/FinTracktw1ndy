@@ -16,5 +16,8 @@ export async function POST(request: Request) {
     const response = Response.json({ message: data.session ? "Аккаунт создан." : "Проверьте почту и подтвердите регистрацию.", user: data.session && data.user ? { id: data.user.id, email: data.user.email } : null }, { headers: { "Cache-Control": "no-store" } });
     if (data.session) setSessionCookies(response, data.session.access_token, data.session.refresh_token, data.session.expires_in);
     return response;
-  } catch { return jsonError("Ошибка регистрации.", 403); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid request origin") return jsonError("Недопустимый источник запроса.", 403);
+    return jsonError("Ошибка регистрации.", 500);
+  }
 }
