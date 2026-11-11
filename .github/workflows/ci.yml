@@ -19,7 +19,7 @@ jobs:
           node-version: 22
       - run: npm ci --no-audit --no-fund
 
-      - run: npm audit --audit-level=high
+      - run: npm audit --audit-level=moderate
       - run: npm run typecheck
       - run: npm run security:smoke
       - name: Supabase two-user RLS integration
