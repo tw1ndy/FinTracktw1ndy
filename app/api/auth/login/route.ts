@@ -16,5 +16,8 @@ export async function POST(request: Request) {
     const response = Response.json({ user: { id: data.user.id, email: data.user.email } }, { headers: { "Cache-Control": "no-store" } });
     setSessionCookies(response, data.session.access_token, data.session.refresh_token, data.session.expires_in);
     return response;
-  } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка авторизации.", 403); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid request origin") return jsonError("Недопустимый источник запроса.", 403);
+    return jsonError("Ошибка авторизации.", 500);
+  }
 }
