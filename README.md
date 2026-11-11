@@ -45,7 +45,7 @@ SUPABASE_TEST_USER_B_EMAIL=...
 SUPABASE_TEST_USER_B_PASSWORD=...
 ```
 
-Затем выполните `npm run test:supabase` (нужен Node.js 20.6+). Скрипт создаёт временные записи от первого пользователя и проверяет, что второй не может их читать или изменять; тестовые записи удаляются в конце. Запускайте только на тестовом проекте/тестовых аккаунтах.
+Затем выполните `npm run test:supabase` (нужен Node.js 20.6+). Скрипт создаёт временные записи от первого пользователя и проверяет, что второй не может их читать или изменять; тестовые записи удаляются в конце. Запускайте только на тестовом проекте/тестовых аккаунтах. Для автоматического запуска в GitHub Actions добавьте в Settings → Secrets and variables → Actions переменную `RUN_SUPABASE_INTEGRATION=true` и шесть секретов с теми же именами, что выше (включая URL и anon key). Пароли тестовых пользователей должны принадлежать только тестовым аккаунтам.
 
 6. В Supabase → Authentication → URL Configuration укажите URL сайта и добавьте redirect URL `https://ВАШ-ДОМЕН/auth/confirm?next=/reset-password` (для локальной разработки также `http://localhost:3000/auth/confirm?next=/reset-password`).
 7. В шаблоне письма восстановления пароля используйте ссылку с `token_hash`: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`. Для подтверждения регистрации аналогично используйте `type=signup` и `next=/`.
