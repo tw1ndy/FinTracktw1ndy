@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Activity, ArrowDownLeft, ArrowUpRight, Bell, ChevronDown, CircleHelp, CreditCard, Download, Globe2, LayoutDashboard, LogOut, Plus, RefreshCw, Settings2, ShieldCheck, Target, Wallet, X, Menu } from "lucide-react";
 import { CURRENCIES, Currency, money, Transaction, Budget, Goal, Account, uid } from "@/lib/types";
-import { FxRates, getRates } from "@/lib/fx";
+import { FxRates } from "@/lib/fx";
 
 
 const categories = ["Еда","Транспорт","Жильё","Покупки","Подписки","Здоровье","Развлечения","Работа","Переводы","Другое"];
