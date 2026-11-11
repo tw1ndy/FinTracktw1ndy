@@ -78,6 +78,7 @@ export async function DELETE(request: Request) {
     assertSameOrigin(request);
     const session = await getAuthenticatedUser();
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    if (!rateLimit(request, session.user.id, "accounts-delete")) return jsonError("Слишком много запросов.", 429);
     const id = new URL(request.url).searchParams.get("id");
     if (!id || id.length > 100) return jsonError("Не указан счёт.");
     const client = getUserScopedClient(session.access);
