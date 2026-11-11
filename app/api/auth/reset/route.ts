@@ -11,5 +11,8 @@ export async function POST(request: Request) {
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${new URL(request.url).origin}/auth/confirm?next=/reset-password` });
     if (error) return jsonError("Не удалось отправить письмо. Попробуйте позже.", 400);
     return Response.json({ message: "Если аккаунт существует, письмо для восстановления будет отправлено." }, { headers: { "Cache-Control": "no-store" } });
-  } catch { return jsonError("Недопустимый запрос.", 403); }
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid request origin") return jsonError("Недопустимый источник запроса.", 403);
+    return jsonError("Не удалось обработать запрос.", 500);
+  }
 }
