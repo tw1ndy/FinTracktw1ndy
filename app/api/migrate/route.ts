@@ -71,21 +71,31 @@ export async function POST(request: Request) {
         saved: x.saved, currency: x.currency, deadline: x.deadline || null };
     });
 
-    if (txRows.length) {
-      const { error } = await client.from("transactions").upsert(txRows, { onConflict: "user_id,client_id" });
-      if (error) return jsonError("Не удалось перенести операции. Проверьте SQL-миграцию локальных данных.", 400);
-    }
-    if (accountRows.length) {
-      const { error } = await client.from("accounts").upsert(accountRows, { onConflict: "user_id,client_id" });
-      if (error) return jsonError("Не удалось перенести счета. Проверьте SQL-миграцию локальных данных.", 400);
+    const saveByStableId = async (table: "transactions" | "accounts" | "goals", rows: any[]) => {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRows = rows.filter(row => uuidPattern.test(row.client_id)).map(({ client_id, ...row }) => ({ ...row, id: client_id, client_id: null }));
+      const legacyRows = rows.filter(row => !uuidPattern.test(row.client_id));
+      if (uuidRows.length) {
+        const { error } = await client.from(table).upsert(uuidRows, { onConflict: "id" });
+        if (error) return error;
+      }
+      if (legacyRows.length) {
+        const { error } = await client.from(table).upsert(legacyRows, { onConflict: "user_id,client_id" });
+        if (error) return error;
+      }
+      return null;
+    };
+    for (const [table, rows, label] of [
+      ["transactions", txRows, "операции"], ["accounts", accountRows, "счета"], ["goals", goalRows, "цели"]
+    ] as const) {
+      if (rows.length) {
+        const error = await saveByStableId(table, rows);
+        if (error) return jsonError(`Не удалось перенести ${label}. Проверьте SQL-миграцию локальных данных.`, 400);
+      }
     }
     if (budgetRows.length) {
       const { error } = await client.from("budgets").upsert(budgetRows, { onConflict: "user_id,category,currency", ignoreDuplicates: true });
       if (error) return jsonError("Не удалось перенести бюджеты.", 400);
-    }
-    if (goalRows.length) {
-      const { error } = await client.from("goals").upsert(goalRows, { onConflict: "user_id,client_id" });
-      if (error) return jsonError("Не удалось перенести цели. Проверьте SQL-миграцию локальных данных.", 400);
     }
     return Response.json({ ok: true, imported: { transactions: txRows.length, accounts: accountRows.length, budgets: budgetRows.length, goals: goalRows.length } },
       { headers: { "Cache-Control": "no-store" } });
