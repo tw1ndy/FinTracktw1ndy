@@ -9,7 +9,7 @@
     "lint": "tsc --noEmit",
     "security:smoke": "node scripts/security-smoke.mjs",
     "typecheck": "tsc --noEmit",
-    "test:supabase": "node scripts/supabase-integration.mjs"
+    "test:supabase": "node --env-file=.env.local scripts/supabase-integration.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
