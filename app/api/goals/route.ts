@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       return jsonError("Проверьте название, суммы, валюту и срок цели.");
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("goals")
-      .insert({ user_id: session.user.id, title, target, saved, currency: body.currency, deadline })
+      .insert({ user_id: session.user.id, client_id: typeof body.id === "string" ? body.id.slice(0,100) : null, title, target, saved, currency: body.currency, deadline })
       .select("id,title,target,saved,currency,deadline").single();
     if (error) return jsonError("Не удалось сохранить цель.", 400);
     return Response.json({ goal: { ...data, target: Number(data.target), saved: Number(data.saved) } }, { headers: { "Cache-Control": "no-store" } });
