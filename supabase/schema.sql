@@ -1,4 +1,4 @@
--- Run this whole file in Supabase → SQL Editor.
+-- Run this whole file in Supabase → SQL Editor for a new project.
 create extension if not exists "pgcrypto";
 
 create table if not exists public.profiles (
@@ -12,20 +12,23 @@ create table if not exists public.accounts (
   name text not null,
   balance numeric(18,2) not null default 0,
   currency text not null default 'EUR',
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint accounts_id_user_id_key unique (id, user_id)
 );
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  account_id uuid not null,
   title text not null,
   amount numeric(18,2) not null check (amount > 0),
   currency text not null,
   type text not null check (type in ('income','expense')),
   category text not null,
   tx_date date not null default current_date,
-  account_name text not null default 'Основной счёт',
   note text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint transactions_account_id_user_id_fkey
+    foreign key (account_id, user_id) references public.accounts(id, user_id) on delete restrict
 );
 create table if not exists public.budgets (
   id uuid primary key default gen_random_uuid(),
@@ -65,4 +68,5 @@ drop policy if exists "goals own rows" on public.goals;
 create policy "goals own rows" on public.goals for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create index if not exists transactions_user_date_idx on public.transactions(user_id, tx_date desc);
+create index if not exists transactions_account_user_idx on public.transactions(account_id, user_id);
 create index if not exists accounts_user_idx on public.accounts(user_id);
