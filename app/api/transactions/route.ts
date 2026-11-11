@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date) return jsonError("Некорректная дата.");
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("transactions").insert({
-      user_id: session.user.id, client_id: typeof body.id === "string" ? body.id.slice(0,100) : null, title, amount, currency: body.currency, type: body.type,
+      user_id: session.user.id, title, amount, currency: body.currency, type: body.type,
       category, tx_date: date, account_name: account, note: typeof body.note === "string" ? body.note.slice(0,500) : null,
     }).select("id").single();
     if (error) return jsonError("Не удалось сохранить операцию.", 400);
