@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { allowRequest } from "@/lib/rate-limit";
+import { allowRequest, getClientIp } from "@/lib/rate-limit";
 import { assertSameOrigin, getSupabaseAdminlessClient, getUserScopedClient, jsonError } from "@/lib/server-supabase";
 
 const currencies = new Set(["RUB","USD","EUR","GBP","CNY","TRY","AED","CHF","JPY","CAD"]);
@@ -20,7 +20,7 @@ async function getAuthenticatedUser() {
 }
 
 function rateLimit(request: Request, userId: string, key: string) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = getClientIp(request);
   return allowRequest(`${key}:${userId}:${ip}`, 60, 60 * 60 * 1000);
 }
 
