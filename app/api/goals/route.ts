@@ -3,6 +3,11 @@ import { allowRequest } from "@/lib/rate-limit";
 import { assertSameOrigin, getSupabaseAdminlessClient, getUserScopedClient, jsonError } from "@/lib/server-supabase";
 
 const currencies = new Set(["RUB","USD","EUR","GBP","CNY","TRY","AED","CHF","JPY","CAD"]);
+function isValidDate(value: string) {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 export const runtime = "nodejs";
 
 async function getAuthenticatedUser() {
@@ -85,6 +90,7 @@ export async function DELETE(request: Request) {
     assertSameOrigin(request);
     const session = await getAuthenticatedUser();
     if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    if (!rateLimit(request, session.user.id, "goals-delete")) return jsonError("Слишком много запросов.", 429);
     const id = new URL(request.url).searchParams.get("id");
     if (!id || id.length > 100) return jsonError("Не указана цель.");
     const client = getUserScopedClient(session.access);
