@@ -21,7 +21,7 @@ assert.match(tx, /user_id: session.user.id/);
 assert.match(tx, /Number\.isFinite\(amount\)/);
 assert.match(accounts, /export async function PATCH/);
 assert.match(goals, /export async function PATCH/);
-assert.match(migration, /auth\\.getUser\\(access\\)/);
+assert.ok(migration.includes("auth.getUser(access)"));
 assert.match(migration, /onConflict: "user_id,client_id"/);
 assert.match(migration, /ignoreDuplicates: true/);
 assert.match(sql, /force row level security/i);
