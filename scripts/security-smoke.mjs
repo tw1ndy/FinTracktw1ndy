@@ -21,6 +21,9 @@ assert.ok(login.includes("signInWithPassword"));
 assert.ok(login.includes("allowRequest"));
 assert.ok(tx.includes("auth.getUser(access)"));
 assert.ok(tx.includes("user_id: session.user.id"));
+assert.ok(tx.includes("account_id: account.id"));
+assert.ok(tx.includes("accounts(name)"));
+assert.ok(!tx.includes("account_name"));
 assert.ok(tx.includes("Number.isFinite(amount)"));
 assert.ok(tx.includes("export async function PATCH"));
 assert.ok(tx.includes("export async function DELETE"));
@@ -39,6 +42,8 @@ assert.ok(!page.includes("localStorage.setItem") && !page.includes("useStored"))
 assert.ok(!tx.includes("client_id"));
 assert.ok(!goals.includes("client_id"));
 assert.equal(existsSync(new URL("../app/api/migrate/route.ts", import.meta.url)), false);
+assert.ok(existsSync(new URL("../supabase/migrations/20261111_account_id.sql", import.meta.url)));
+assert.ok(read("supabase/migrations/20261111_account_id.sql").includes("transactions_account_id_user_id_fkey"));
 
 for (const p of [
   "app/page.tsx",
