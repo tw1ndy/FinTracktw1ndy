@@ -44,6 +44,9 @@ export async function POST(request: Request) {
     if (!name || name.length > 80 || !Number.isFinite(balance) || Math.abs(balance) > 1_000_000_000 || !currencies.has(body.currency))
       return jsonError("Проверьте название, баланс и валюту.");
     const client = getUserScopedClient(session.access);
+    const { data: existing, error: lookupError } = await client.from("accounts").select("name").eq("user_id", session.user.id);
+    if (lookupError) return jsonError("Не удалось проверить существующие счета.", 400);
+    if ((existing || []).some(row => row.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase())) return jsonError("Счёт с таким названием уже существует. Названия счетов должны быть уникальными.", 409);
     const { data, error } = await client.from("accounts")
       .insert({ user_id: session.user.id, name, balance, currency: body.currency })
       .select("id,name,balance,currency").single();
@@ -66,6 +69,16 @@ export async function PATCH(request: Request) {
       Math.abs(balance) > 1_000_000_000 || !currencies.has(body.currency))
       return jsonError("Проверьте данные счёта.");
     const client = getUserScopedClient(session.access);
+    const { data: current, error: currentError } = await client.from("accounts").select("id,name").eq("id", id).eq("user_id", session.user.id).single();
+    if (currentError || !current) return jsonError("Счёт не найден.", 404);
+    const { data: existing, error: lookupError } = await client.from("accounts").select("id,name").eq("user_id", session.user.id);
+    if (lookupError) return jsonError("Не удалось проверить существующие счета.", 400);
+    if ((existing || []).some(row => row.id !== id && row.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase())) return jsonError("Счёт с таким названием уже существует.", 409);
+    if (current.name !== name) {
+      const { data: linked, error: linkedError } = await client.from("transactions").select("id").eq("user_id", session.user.id).eq("account_name", current.name).limit(1);
+      if (linkedError) return jsonError("Не удалось проверить операции счёта.", 400);
+      if (linked?.length) return jsonError("Нельзя переименовать счёт, пока к нему привязаны операции. Сначала измените их привязку.", 409);
+    }
     const { data, error } = await client.from("accounts").update({ name, balance, currency: body.currency })
       .eq("id", id).eq("user_id", session.user.id).select("id,name,balance,currency").single();
     if (error || !data) return jsonError("Не удалось обновить счёт.", 404);
