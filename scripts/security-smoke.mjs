@@ -9,7 +9,6 @@ const page = read("app/page.tsx");
 const tx = read("app/api/transactions/route.ts");
 const accounts = read("app/api/accounts/route.ts");
 const budgets = read("app/api/budgets/route.ts");
-const goals = read("app/api/goals/route.ts");
 const fx = read("app/api/fx/route.ts");
 const sql = read("supabase/security-hardening.sql");
 const ignore = read(".gitignore");
