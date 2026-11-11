@@ -52,6 +52,27 @@ export async function POST(request: Request) {
   } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка сохранения счёта.", 400); }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    assertSameOrigin(request);
+    const session = await getAuthenticatedUser();
+    if (!session) return jsonError("Требуется вход в аккаунт.", 401);
+    if (!rateLimit(request, session.user.id, "accounts-update")) return jsonError("Слишком много запросов.", 429);
+    const body = await request.json();
+    const id = typeof body.id === "string" ? body.id : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const balance = Number(body.balance);
+    if (!id || id.length > 100 || !name || name.length > 80 || !Number.isFinite(balance) ||
+      Math.abs(balance) > 1_000_000_000 || !currencies.has(body.currency))
+      return jsonError("Проверьте данные счёта.");
+    const client = getUserScopedClient(session.access);
+    const { data, error } = await client.from("accounts").update({ name, balance, currency: body.currency })
+      .eq("id", id).eq("user_id", session.user.id).select("id,name,balance,currency").single();
+    if (error || !data) return jsonError("Не удалось обновить счёт.", 404);
+    return Response.json({ account: { ...data, balance: Number(data.balance) } }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { return jsonError(error instanceof Error && error.message === "Invalid request origin" ? "Недопустимый источник запроса." : "Ошибка обновления счёта.", 400); }
+}
+
 export async function DELETE(request: Request) {
   try {
     assertSameOrigin(request);
