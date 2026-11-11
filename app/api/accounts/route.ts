@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       return jsonError("Проверьте название, баланс и валюту.");
     const client = getUserScopedClient(session.access);
     const { data, error } = await client.from("accounts")
-      .insert({ user_id: session.user.id, client_id: typeof body.id === "string" ? body.id.slice(0,100) : null, name, balance, currency: body.currency })
+      .insert({ user_id: session.user.id, name, balance, currency: body.currency })
       .select("id,name,balance,currency").single();
     if (error) return jsonError("Не удалось сохранить счёт.", 400);
     return Response.json({ account: { ...data, balance: Number(data.balance) } }, { headers: { "Cache-Control": "no-store" } });
