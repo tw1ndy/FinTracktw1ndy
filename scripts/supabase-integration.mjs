@@ -30,9 +30,14 @@ const ids = {};
 const today = new Date().toISOString().slice(0, 10);
 
 try {
+  const { data: account, error: accountError } = await a.client.from("accounts")
+    .insert({ user_id: a.user.id, name: `RLS test ${suffix}`, balance: 12.34, currency: "EUR" })
+    .select("id").single();
+  if (accountError || !account) throw new Error(`User A account fixture failed: ${accountError?.message || "no row"}`);
+  ids.accounts = account.id;
+
   const fixtures = [
-    ["accounts", { user_id: a.user.id, name: `RLS test ${suffix}`, balance: 12.34, currency: "EUR" }],
-    ["transactions", { user_id: a.user.id, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today, account_name: "RLS test" }],
+    ["transactions", { user_id: a.user.id, account_id: account.id, title: "RLS test", amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today }],
     ["budgets", { user_id: a.user.id, category: `RLS-${suffix}`, amount_limit: 100, currency: "EUR" }],
     ["goals", { user_id: a.user.id, title: `RLS test ${suffix}`, target: 100, saved: 10, currency: "EUR" }]
   ];
@@ -46,9 +51,8 @@ try {
     if (readError) throw new Error(`User B read check failed for ${table}: ${readError.message}`);
     assert.equal(hidden.length, 0, `RLS leak: user B can read user A's ${table} row`);
 
-    const { data: changed, error: updateError } = await b.client.from(table)
-      .update(table === "accounts" ? { balance: 999 } : table === "transactions" ? { title: "changed" } : table === "budgets" ? { amount_limit: 999 } : { saved: 99 })
-      .eq("id", data.id).select("id");
+    const patch = table === "transactions" ? { title: "changed" } : table === "budgets" ? { amount_limit: 999 } : { saved: 99 };
+    const { data: changed, error: updateError } = await b.client.from(table).update(patch).eq("id", data.id).select("id");
     if (updateError) throw new Error(`User B update check failed for ${table}: ${updateError.message}`);
     assert.equal(changed.length, 0, `RLS leak: user B can update user A's ${table} row`);
 
@@ -60,10 +64,18 @@ try {
     if (deleteError) throw new Error(`User B delete check failed for ${table}: ${deleteError.message}`);
     assert.equal(deleted.length, 0, `RLS leak: user B can delete user A's ${table} row`);
   }
-  console.log("Supabase RLS integration checks passed for accounts, transactions, budgets, and goals.");
+
+  const { error: crossAccountInsertError } = await b.client.from("transactions").insert({
+    user_id: b.user.id, account_id: account.id, title: "Cross-user account reference",
+    amount: 1, currency: "EUR", type: "expense", category: "Другое", tx_date: today
+  });
+  assert.ok(crossAccountInsertError, "User B must not attach a transaction to User A's account ID");
+
+  console.log("Supabase RLS and cross-user account-reference checks passed.");
 } finally {
-  for (const [table, id] of Object.entries(ids)) {
-    await a.client.from(table).delete().eq("id", id).eq("user_id", a.user.id);
+  for (const table of ["transactions", "goals", "budgets", "accounts"]) {
+    const id = ids[table];
+    if (id) await a.client.from(table).delete().eq("id", id).eq("user_id", a.user.id);
   }
   await Promise.all([a.auth.auth.signOut(), b.auth.auth.signOut()]);
 }
