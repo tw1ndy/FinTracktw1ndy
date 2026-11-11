@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { assertSameOrigin, getSupabaseAdminlessClient, jsonError } from "@/lib/server-supabase";
+import { allowRequest } from "@/lib/rate-limit";
+import { assertSameOrigin, getSupabaseAdminlessClient, jsonError, setSessionCookies } from "@/lib/server-supabase";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
@@ -11,8 +12,12 @@ export async function POST(request: Request) {
     const client = getSupabaseAdminlessClient();
     const session = await client.auth.setSession({ access_token: access, refresh_token: refresh });
     if (session.error) return jsonError("Недействительная сессия.", 401);
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!allowRequest(`password:${ip}`, 5, 60 * 60 * 1000)) return jsonError("Слишком много запросов. Попробуйте позже.", 429);
     const updated = await client.auth.updateUser({ password });
     if (updated.error) return jsonError("Не удалось обновить пароль.", 400);
-    return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+    const response = Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+    if (session.data.session) setSessionCookies(response, session.data.session.access_token, session.data.session.refresh_token, session.data.session.expires_in);
+    return response;
   } catch { return jsonError("Ошибка обновления пароля.", 403); }
 }
