@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 
-const CURRENCIES = new Set(["RUB", "USD", "EUR", "GBP", "CNY", "TRY", "AED", "CHF", "JPY", "CAD"]);
+const CURRENCIES = ["RUB", "USD", "EUR", "GBP", "CNY", "TRY", "AED", "CHF", "JPY", "CAD"] as const;
 const PROVIDER = "https://open.er-api.com/v6/latest";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const base = (request.nextUrl.searchParams.get("base") || "EUR").toUpperCase();
-  if (!CURRENCIES.has(base)) return Response.json({ error: "Unsupported base currency." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  if (!(CURRENCIES as readonly string[]).includes(base)) return Response.json({ error: "Unsupported base currency." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   try {
     const upstream = await fetch(`${PROVIDER}/${base}`, { cache: "no-store", headers: { Accept: "application/json" } });
     if (!upstream.ok) return Response.json({ error: "Currency provider is unavailable." }, { status: 502, headers: { "Cache-Control": "no-store" } });
